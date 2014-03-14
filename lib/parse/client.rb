@@ -189,19 +189,23 @@ module Parse
   # ------------------------------------------------------------
 
   @@cfg = nil
+  @@mutex = Mutex.new
 
   # Initialize the singleton instance of Client which is used
   # by all API methods. Parse.init must be called before saving
   # or retrieving any objects.
   def Parse.init(data = {})
-    defaulted = {:application_id => ENV["PARSE_APPLICATION_ID"],
-                 :api_key => ENV["PARSE_REST_API_KEY"]}
-    defaulted.merge!(data)
+    @@mutex.synchronize do
+      defaulted = {:application_id => ENV["PARSE_APPLICATION_ID"],
+                   :api_key => ENV["PARSE_REST_API_KEY"]}
+      defaulted.merge!(data)
 
-    # use less permissive key if both are specified
-    defaulted[:master_key] = ENV["PARSE_MASTER_API_KEY"] unless data[:master_key] || defaulted[:api_key]
+      # use less permissive key if both are specified
+      defaulted[:master_key] = ENV["PARSE_MASTER_API_KEY"] unless data[:master_key] || defaulted[:api_key]
 
-    @@cfg = defaulted
+      @@cfg = defaulted
+      Thread.list.each { |t| t[:parse_client] = nil }
+    end
   end
 
   # A convenience method for using global.json
@@ -216,14 +220,18 @@ module Parse
 
   # Used mostly for testing. Lets you delete the api key global vars.
   def Parse.destroy
-    Thread.list.each { |t| t[:parse_client] = nil }
-    @@cfg = nil
+    @@mutex.synchronize do
+      @@cfg = nil
+      Thread.list.each { |t| t[:parse_client] = nil }
+    end
     self
   end
 
   def Parse.client
-    raise ParseError, "API not initialized" if !@@cfg
-    Thread.current[:parse_client] ||= Client.new(@@cfg)
+    @@mutex.synchronize do
+      raise ParseError, "API not initialized" if !@@cfg
+      Thread.current[:parse_client] ||= Client.new(@@cfg)
+    end
   end
 
   # Perform a simple retrieval of a simple object, or all objects of a
