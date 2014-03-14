@@ -217,6 +217,7 @@ module Parse
   # Used mostly for testing. Lets you delete the api key global vars.
   def Parse.destroy
     Thread.list.each { |t| t[:parse_client] = nil }
+    @@cfg = nil
     self
   end
 
