@@ -228,9 +228,9 @@ module Parse
   end
 
   def Parse.client
-    @@mutex.synchronize do
+    Thread.current[:parse_client] ||= @@mutex.synchronize do
       raise ParseError, "API not initialized" if !@@cfg
-      Thread.current[:parse_client] ||= Client.new(@@cfg)
+      Client.new(@@cfg)
     end
   end
 
