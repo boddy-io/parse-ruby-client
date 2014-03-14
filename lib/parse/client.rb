@@ -188,9 +188,7 @@ module Parse
   # Module methods
   # ------------------------------------------------------------
 
-  # A singleton client for use by methods in Object.
-  # Always use Parse.client to retrieve the client object.
-  @@client = nil
+  @@cfg = nil
 
   # Initialize the singleton instance of Client which is used
   # by all API methods. Parse.init must be called before saving
@@ -203,8 +201,7 @@ module Parse
     # use less permissive key if both are specified
     defaulted[:master_key] = ENV["PARSE_MASTER_API_KEY"] unless data[:master_key] || defaulted[:api_key]
 
-
-    @@client = Client.new(defaulted)
+    @@cfg = defaulted
   end
 
   # A convenience method for using global.json
@@ -219,15 +216,13 @@ module Parse
 
   # Used mostly for testing. Lets you delete the api key global vars.
   def Parse.destroy
-    @@client = nil
+    Thread.list.each { |t| t[:parse_client] = nil }
     self
   end
 
   def Parse.client
-    if !@@client
-      raise ParseError, "API not initialized"
-    end
-    @@client
+    raise ParseError, "API not initialized" if !@@cfg
+    Thread.current[:parse_client] ||= Client.new(@@cfg)
   end
 
   # Perform a simple retrieval of a simple object, or all objects of a
@@ -244,6 +239,4 @@ module Parse
 
     raise
   end
-
 end
-
