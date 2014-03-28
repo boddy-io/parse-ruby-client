@@ -71,7 +71,7 @@ module Parse
     attr_accessor :value
 
     def initialize(data)
-      if data.responds_to? :iso8601
+      if data.respond_to? :iso8601
         @value = data
       elsif data.is_a? Hash
         @value = DateTime.parse data["iso"]
