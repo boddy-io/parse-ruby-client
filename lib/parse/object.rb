@@ -20,6 +20,13 @@ module Parse
       end
     end
 
+    def marshal_load hash
+      @class_name = hash.delete('className')
+      @parse_object_id = hash['objectId'] if hash['objectId']
+      @created_at = hash['createdAt'] if hash['createdAt']
+      @updated_at = hash['updatedAt'] if hash['updatedAt']
+    end
+
     def eql?(other)
       Parse.object_pointer_equality?(self, other)
     end

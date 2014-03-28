@@ -80,6 +80,14 @@ module Parse
       end
     end
 
+    def marshal_dump
+      @value
+    end
+
+    def marshal_load value
+      @value = value
+    end
+
     def eql?(other)
       self.class.equal?(other.class) &&
         value == other.value
@@ -308,6 +316,11 @@ module Parse
       @content_type   = data["content_type"]   if data["content_type"]
       @url            = data["url"]            if data["url"]
       @body           = data["body"]           if data["body"]
+    end
+
+    def marshal_load hash
+      @parse_filename = hash['parse_filename']
+      @url = hash['url']
     end
 
     def eql?(other)
