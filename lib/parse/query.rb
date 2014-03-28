@@ -20,7 +20,6 @@ module Parse
     end
 
     def add_constraint(field, constraint)
-      raise ArgumentError, "cannot add constraint to an $or query" if @ors.size > 0
       current = where[field]
       if current && current.is_a?(Hash) && constraint.is_a?(Hash)
         current.merge! constraint
@@ -35,8 +34,12 @@ module Parse
       self
     end
 
-    def or(query)
-      raise ArgumentError, "you must pass an entire #{self.class} to \#or" unless query.is_a?(self.class)
+    def or query=nil, &block
+      if block_given?
+        query = self.class.new(class_name).tap &block
+      else
+        raise ArgumentError, "you must pass an entire #{self.class} to \#or" unless query.is_a?(self.class)
+      end
       @ors << query
       self
     end
@@ -108,15 +111,15 @@ module Parse
     end
 
     def where_as_json
-      if @ors.size > 0
-        {"$or" => [self.where] + @ors.map{|query| query.where_as_json}}
+      if @ors.any?
+        @where.merge "$or" => @ors.map(&:where_as_json)
       else
         @where
       end
     end
 
     def get
-      uri   = Protocol.class_uri @class_name
+      uri = Protocol.class_uri @class_name
       if @class_name == Parse::Protocol::CLASS_USER
         uri = Protocol.user_uri
       end
