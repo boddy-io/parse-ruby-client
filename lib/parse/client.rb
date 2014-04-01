@@ -20,6 +20,7 @@ module Parse
     attr_accessor :session
     attr_accessor :max_retries
     attr_accessor :logger
+    attr_accessor :use_master_key
 
     def initialize(data = {})
       @host           = data[:host] || Protocol::HOST
@@ -30,6 +31,7 @@ module Parse
       @max_retries    = data[:max_retries] || 3
       @logger         = data[:logger] || Logger.new(STDERR).tap{|l| l.level = Logger::INFO}
       @session        = data[:http_client] || Parse::DEFAULT_HTTP_CLIENT.new
+      @use_master_key = data[:use_master_key]
 
       if data[:ironio_project_id] && data[:ironio_token]
 
@@ -60,7 +62,7 @@ module Parse
       options = {}
       headers = {}
 
-      headers[Protocol::HEADER_MASTER_KEY]    = @master_key if @master_key
+      headers[Protocol::HEADER_MASTER_KEY]    = @master_key if @master_key && @use_master_key
       headers[Protocol::HEADER_API_KEY]       = @api_key
       headers[Protocol::HEADER_APP_ID]        = @application_id
       headers[Protocol::HEADER_SESSION_TOKEN] = @session_token if @session_token
@@ -190,6 +192,7 @@ module Parse
 
   @@cfg = nil
   @@mutex = Mutex.new
+  @@use_master_key = false
 
   # Initialize the singleton instance of Client which is used
   # by all API methods. Parse.init must be called before saving
@@ -202,6 +205,7 @@ module Parse
 
       # use less permissive key if both are specified
       defaulted[:master_key] = ENV["PARSE_MASTER_API_KEY"] unless data[:master_key] || defaulted[:api_key]
+      defaulted[:use_master_key] = @@use_master_key
 
       @@cfg = defaulted
       Thread.list.each { |t| t[:parse_client] = nil }
@@ -231,6 +235,13 @@ module Parse
     Thread.current[:parse_client] ||= @@mutex.synchronize do
       raise ParseError, "API not initialized" if !@@cfg
       Client.new(@@cfg)
+    end
+  end
+
+  def Parse.use_master_key bool
+    @@mutex.synchronize do
+      @@use_master_key = bool
+      Thread.list.each { |t| t[:parse_client].use_master_key = @@use_master_key if t[:parse_client] }
     end
   end
 
