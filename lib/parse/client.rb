@@ -192,7 +192,6 @@ module Parse
 
   @@cfg = nil
   @@mutex = Mutex.new
-  @@use_master_key = false
 
   # Initialize the singleton instance of Client which is used
   # by all API methods. Parse.init must be called before saving
@@ -205,7 +204,6 @@ module Parse
 
       # use less permissive key if both are specified
       defaulted[:master_key] = ENV["PARSE_MASTER_API_KEY"] unless data[:master_key] || defaulted[:api_key]
-      defaulted[:use_master_key] = @@use_master_key
 
       @@cfg = defaulted
       Thread.list.each { |t| t[:parse_client] = nil }
@@ -238,11 +236,11 @@ module Parse
     end
   end
 
-  def Parse.use_master_key bool
-    @@mutex.synchronize do
-      @@use_master_key = bool
-      Thread.list.each { |t| t[:parse_client].use_master_key = @@use_master_key if t[:parse_client] }
-    end
+  def Parse.use_master_key &block
+    Parse.client.use_master_key = true
+    block.call
+  ensure
+    Parse.client.use_master_key = false
   end
 
   # Perform a simple retrieval of a simple object, or all objects of a
