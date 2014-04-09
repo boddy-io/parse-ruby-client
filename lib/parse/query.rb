@@ -11,6 +11,7 @@ module Parse
     attr_accessor :skip
     attr_accessor :count
     attr_accessor :include
+    attr_accessor :keys
 
     def initialize(cls_name)
       @class_name = cls_name
@@ -125,7 +126,7 @@ module Parse
       end
       query = { "where" => CGI.escape(where_as_json.to_json) }
       set_order(query)
-      [:count, :limit, :skip, :include].each {|a| merge_attribute(a, query)}
+      [:count, :limit, :skip, :include, :keys].each {|a| merge_attribute(a, query)}
       Parse.client.logger.info{"Parse query for #{uri} #{CGI.unescape(query.inspect)}"}
       response = Parse.client.request uri, :get, nil, query
 
@@ -151,10 +152,11 @@ module Parse
     end
 
     def merge_attribute(attribute, query, query_field = nil)
-      value = self.instance_variable_get("@#{attribute.to_s}")
-      return if value.nil?
+      case value = instance_variable_get("@#{attribute}")
+        when nil then return
+        when Array then value = value.join(',')
+      end
       query.merge!((query_field || attribute) => value)
     end
   end
-
 end
