@@ -62,8 +62,11 @@ module Parse
       options = {}
       headers = {}
 
-      headers[Protocol::HEADER_MASTER_KEY]    = @master_key if @master_key && @use_master_key
-      headers[Protocol::HEADER_API_KEY]       = @api_key
+      if @master_key && @use_master_key
+        headers[Protocol::HEADER_MASTER_KEY]  = @master_key
+      else
+        headers[Protocol::HEADER_API_KEY]     = @api_key
+      end
       headers[Protocol::HEADER_APP_ID]        = @application_id
       headers[Protocol::HEADER_SESSION_TOKEN] = @session_token if @session_token
 
@@ -114,6 +117,7 @@ module Parse
         if response.status >= 400
           parsed ||= {}
 
+          headers = @session.headers.merge(headers)
           [ Protocol::HEADER_API_KEY, Protocol::HEADER_MASTER_KEY, Protocol::HEADER_SESSION_TOKEN ].each do |k|
             if headers[k] && headers[k] != ''
               headers[k] = "#{headers[k][0,2]}.."
