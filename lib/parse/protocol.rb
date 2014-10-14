@@ -67,6 +67,7 @@ module Parse
     KEY_ADD_RELATION= "AddRelation"
     KEY_ADD_UNIQUE  = "AddUnique"
     KEY_REMOVE      = "Remove"
+    KEY_REMOVE_RELATION= "RemoveRelation"
 
     DELETE_OP       = { KEY_OP => KEY_DELETE }
 

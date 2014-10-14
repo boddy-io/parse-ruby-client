@@ -162,6 +162,10 @@ module Parse
       array_op(field, Protocol::KEY_REMOVE, value)
     end
 
+    def array_remove_relation(field, value)
+      array_op(field, Protocol::KEY_REMOVE_RELATION, value)
+    end
+
     # Increment the given field by an amount, which defaults to 1. Saves immediately to reflect incremented
     def increment(field, amount = 1)
       #value = (self[field] || 0) + amount
@@ -238,6 +242,8 @@ module Parse
         self[field] ||= []
         self[field] << value unless self[field].include?(value)
       when Protocol::KEY_REMOVE
+        self[field].delete(value) if self[field]
+      when Protocol::KEY_REMOVE_RELATION
         self[field].delete(value) if self[field]
       end
     end
