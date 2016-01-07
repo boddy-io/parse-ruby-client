@@ -241,17 +241,23 @@ module Parse
   end
 
   def Parse.use_master_key &block
-    Parse.client.use_master_key = true
+    client.use_master_key = true
     block.call
   ensure
-    Parse.client.use_master_key = false
+    client.use_master_key = false
   end
 
   def Parse.use_session_token token, &block
-    saved, Parse.client.session_token = Parse.client.session_token, token
+    saved, client.session_token = client.session_token, token
     block.call
   ensure
-    Parse.client.session_token = saved
+    client.session_token = saved
+  end
+
+  def Parse.me
+    if user = client.get(Parse::Protocol.user_uri('me'))
+      parse_json '_User', user
+    end
   end
 
   # Perform a simple retrieval of a simple object, or all objects of a
