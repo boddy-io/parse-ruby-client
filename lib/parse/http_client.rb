@@ -39,8 +39,13 @@ module Parse
 
     def base_url=(url)
       @base_url = url
-      @client = Net::HTTP.new(@base_url.sub('https://', ''), 443)
-      @client.use_ssl = true
+      if url =~ /^https/
+        @client = Net::HTTP.new(url.sub('https://', ''), 443)
+        @client.use_ssl = true
+      else
+        @client = Net::HTTP.new(url.sub('http://', ''), 80)
+        @client.use_ssl = false
+      end
     end
   end
 

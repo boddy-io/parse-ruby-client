@@ -13,6 +13,7 @@ module Parse
   # API server.
   class Client
     attr_accessor :host
+    attr_accessor :ssl
     attr_accessor :application_id
     attr_accessor :api_key
     attr_accessor :master_key
@@ -23,18 +24,26 @@ module Parse
     attr_accessor :use_master_key
 
     def initialize(data = {})
-      @host           = data[:host] || Protocol::HOST
+      @session        = data[:http_client] || Parse::DEFAULT_HTTP_CLIENT.new
+      if base = data[:base_url]
+        base.sub! %r{/+$}, ''
+        @host = base.scan(%r{[a-z]+://([^/]+)}).first.first
+        @ssl = (base =~ /^https/)
+        @session.base_url = base
+      else
+        @host = data[:host]
+        @ssl = data[:ssl] || @host !~ /localhost/
+        @session.base_url = "#{@ssl ? 'https' : 'http'}://#{@host}"
+      end
       @application_id = data[:application_id]
       @api_key        = data[:api_key]
       @master_key     = data[:master_key]
       @session_token  = data[:session_token]
       @max_retries    = data[:max_retries] || 3
       @logger         = data[:logger] || Logger.new(STDERR).tap{|l| l.level = Logger::INFO}
-      @session        = data[:http_client] || Parse::DEFAULT_HTTP_CLIENT.new
       @use_master_key = data[:use_master_key]
 
       if data[:ironio_project_id] && data[:ironio_token]
-
         if data[:max_concurrent_requests]
           @max_concurrent_requests = data[:max_concurrent_requests]
         else
@@ -48,7 +57,6 @@ module Parse
 
       end
 
-      @session.base_url                 = "https://#{host}"
       @session.headers["Content-Type"]  = "application/json"
       @session.headers["Accept"]        = "application/json"
       @session.headers["User-Agent"]    = "Parse for Ruby, 0.0"
