@@ -26,10 +26,9 @@ module Parse
     def initialize(data = {})
       @session        = data[:http_client] || Parse::DEFAULT_HTTP_CLIENT.new
       if base = data[:base_url]
-        base.sub! %r{/+$}, ''
         @host = base.scan(%r{[a-z]+://([^/]+)}).first.first
         @ssl = (base =~ /^https/)
-        @session.base_url = base
+        @session.base_url = base.sub(%r{/+$}, '')
       else
         @host = data[:host]
         @ssl = data[:ssl] || @host !~ /localhost/
